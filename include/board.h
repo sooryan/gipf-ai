@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cmath>
+#include <iostream>
 #include <map>
+#include <string>
 #include <vector>
 
 enum class player {
@@ -77,32 +79,25 @@ class Board {
 	 */
 	void SlidePieces(BoardElement elt, direction dir);
 
-  public:
 	Board() {
-		pieces_count[player::WHITE] = 15;
-		pieces_count[player::BLACK] = 15;
+		pieces_count[player::WHITE] = 12;
+		pieces_count[player::BLACK] = 12;
 		current_turn = player::WHITE;
-		// pieces.push_back(std::vector<player>(5, player::NONE));
-		// pieces.push_back(std::vector<player>(6, player::NONE));
-		// pieces.push_back(std::vector<player>(7, player::NONE));
-		// pieces.push_back(std::vector<player>(8, player::NONE));
-		// pieces.push_back(std::vector<player>(9, player::NONE));
-		// pieces.push_back(std::vector<player>(8, player::NONE));
-		// pieces.push_back(std::vector<player>(7, player::NONE));
-		// pieces.push_back(std::vector<player>(6, player::NONE));
-		// pieces.push_back(std::vector<player>(5, player::NONE));
 	}
 
 	player GetWinner();
-	player NextTurn();
+	void NextTurn();
+	player GetNextTurn();
 
 	/**
 	 * Can we move from (letter, number) in direction.
 	 */
 	bool CanMove(BoardElement elt, direction dir);
-	bool Move(BoardElement elt, direction dir, player ply);
+	bool Move(BoardElement elt, direction dir);
 	BoardElement NextElement(BoardElement elt, direction dir);
 
 	void Resolve();
 	void ResolveRow(CapturedRow row);
+
+	void PrintBoard();
 };

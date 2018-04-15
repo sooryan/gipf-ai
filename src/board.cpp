@@ -85,11 +85,15 @@ player Board::GetWinner() {
 	return player::NONE;
 }
 
-player Board::NextTurn() {
-	if (current_turn == player::WHITE)
-		return player::BLACK;
-	return player::WHITE;
+void Board::NextTurn() {
+	if (current_turn == player::WHITE) {
+		current_turn = player::BLACK;
+	} else {
+		current_turn = player::WHITE;
+	}
 }
+
+player Board::GetNextTurn() { return current_turn; }
 
 BoardElement Board::NextElement(BoardElement elt, direction dir) {
 	switch (dir) {
@@ -128,22 +132,20 @@ bool Board::CanMove(BoardElement elt, direction dir) {
 		player cur_color = pieces[n_i][n_j];
 		if (cur_color == player::NONE)
 			return true;
-		next = NextElement(elt, dir);
+		next = NextElement(next, dir);
 	}
 	return false;
 }
 
-bool Board::Move(BoardElement elt, direction dir, player ply) {
+bool Board::Move(BoardElement elt, direction dir) {
 	if (!CanMove(elt, dir)) {
 		return false;
 	}
-	pieces[elt.letter][elt.number] = ply;
+	pieces[elt.letter][elt.number] = current_turn;
 	SlidePieces(elt, dir);
-	if (ply == player::WHITE) {
-		pieces_count[player::WHITE]--;
-	} else if (ply == player::BLACK) {
-		pieces_count[player::BLACK]--;
-	}
+	pieces_count[current_turn]--;
+	Resolve();
+	NextTurn();
 	return true;
 }
 
@@ -161,7 +163,7 @@ void Board::SlidePieces(BoardElement elt, direction dir) {
 		if (cur_color == player::NONE)
 			break;
 		last_color = cur_color;
-		next = NextElement(elt, dir);
+		next = NextElement(next, dir);
 	}
 }
 
@@ -189,7 +191,6 @@ void Board::ResolveRow(CapturedRow row) {
 	auto elt = row.row.elt;
 	auto dir = row.row.dir;
 	auto color = row.color;
-
 	BoardElement next = NextElement(elt, dir);
 	while (InBoard(next)) {
 		int n_i = next.letter;
@@ -198,7 +199,7 @@ void Board::ResolveRow(CapturedRow row) {
 			pieces_count[color]++;
 		}
 		pieces[n_i][n_j] = player::NONE;
-		next = NextElement(elt, dir);
+		next = NextElement(next, dir);
 	}
 }
 
@@ -222,5 +223,58 @@ void Board::Resolve() {
 	// If these rows don't intersect, both must be captured; if they do
 	// intersect, the player playing with that color may choose which
 	// row he will take.
+}
 
+static std::vector<std::string> board = {
+    {" +-------------------------------------+ "},
+    {" | A5  B6  C7  D8  E9  F8  G7  H6  I5  | "},
+    {" |                                     | "},
+    {" |                  x                  | "},
+    {" |              x       x              | "},
+    {" |          x       *       x          | "},
+    {" |      x       *       *       x      | "},
+    {" |  x       *       *       *       x  | "},
+    {" |      *       *       *       *      | "},
+    {" |  x       *       *       *       x  | "},
+    {" |      *       *       *       *      | "},
+    {" |  x       *       *       *       x  | "},
+    {" |      *       *       *       *      | "},
+    {" |  x       *       *       *       x  | "},
+    {" |      *       *       *       *      | "},
+    {" |  x       *       *       *       x  | "},
+    {" |      x       *       *       x      | "},
+    {" |          x       *       x          | "},
+    {" |              x       x              | "},
+    {" |                  x                  | "},
+    {" |                                     | "},
+    {" | A1  B1  C1  D1  E1  F1  G1  H1  I1  | "},
+    {" +-------------------------------------+ "}};
+
+void Board::PrintBoard() {
+
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9 - abs(i - 4); j++) {
+			int i_eff = 19 - abs(i - 4) - (j * 2);
+			int j_eff = i * 4 + 4;
+			switch (pieces[i][j]) {
+			case player::NONE:
+				board[i_eff][j_eff] = '*';
+				break;
+			case player::WHITE:
+				board[i_eff][j_eff] = '#';
+				break;
+			case player::BLACK:
+				board[i_eff][j_eff] = '&';
+				break;
+			}
+		}
+	}
+	std::string buffer(22, ' ');
+	std::cout << buffer << " +-------------------------------------+ \n";
+	std::cout << buffer << "         Pieces Left: &("
+	          << pieces_count[player::BLACK] << ") #("
+	          << pieces_count[player::WHITE] << ")\n";
+	for (auto row : board) {
+		std::cout << buffer << row << std::endl;
+	}
 }
