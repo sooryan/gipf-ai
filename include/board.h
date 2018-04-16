@@ -79,6 +79,7 @@ class Board {
 	 */
 	void SlidePieces(BoardElement elt, direction dir);
 
+  public:
 	Board() {
 		pieces_count[player::WHITE] = 12;
 		pieces_count[player::BLACK] = 12;

@@ -251,7 +251,6 @@ static std::vector<std::string> board = {
     {" +-------------------------------------+ "}};
 
 void Board::PrintBoard() {
-
 	for (int i = 0; i < 9; i++) {
 		for (int j = 0; j < 9 - abs(i - 4); j++) {
 			int i_eff = 19 - abs(i - 4) - (j * 2);
@@ -261,18 +260,18 @@ void Board::PrintBoard() {
 				board[i_eff][j_eff] = '*';
 				break;
 			case player::WHITE:
-				board[i_eff][j_eff] = '#';
+				board[i_eff][j_eff] = 'W';
 				break;
 			case player::BLACK:
-				board[i_eff][j_eff] = '&';
+				board[i_eff][j_eff] = 'B';
 				break;
 			}
 		}
 	}
 	std::string buffer(22, ' ');
 	std::cout << buffer << " +-------------------------------------+ \n";
-	std::cout << buffer << "         Pieces Left: &("
-	          << pieces_count[player::BLACK] << ") #("
+	std::cout << buffer << "         Pieces Left: B("
+	          << pieces_count[player::BLACK] << ") ("
 	          << pieces_count[player::WHITE] << ")\n";
 	for (auto row : board) {
 		std::cout << buffer << row << std::endl;
