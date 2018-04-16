@@ -1,24 +1,21 @@
-#include "board.h"
-#include "utils.h"
-
-using namespace std;
-#define clear() cout << "\033[H\033[J";
+#include "gipf.h"
 
 int main() {
-	Board board;
-	char l;
-	int n;
-	string dir;
-	clear();
-	std::string buffer(22, ' ');
-	do {
-		board.PrintBoard();
-		cout << buffer << "  ["
-		     << (board.GetNextTurn() == player::WHITE ? "#" : "&")
-		     << "] Enter your move eg(A1 NE): ";
-		cin >> l >> n >> dir;
-		getchar();
-		board.Move(BoardElement(l - 'A', n - 1), m[dir]);
-		clear();
-	} while (true);
+	GipfState state = GipfState("_____"
+	                            "______"
+	                            "_______"
+	                            "________"
+	                            "_________"
+	                            "________"
+	                            "_______"
+	                            "______"
+	                            "_____");
+
+	Minimax<GipfState, GipfMove> a(0.1, 30);
+	Minimax<GipfState, GipfMove> b(0.1, 30);
+
+	Tester<GipfState, GipfMove> tester(&state, a, b);
+	tester.start();
+
+	return 0;
 }
