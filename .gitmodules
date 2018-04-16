@@ -1,0 +1,3 @@
+[submodule "gtsa"]
+	path = gtsa
+	url = git@github.com:AdamStelmaszczyk/gtsa.git
