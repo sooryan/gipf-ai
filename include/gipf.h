@@ -92,15 +92,15 @@ size_t hash_value(const Board &board) {
 struct GipfState : public State<GipfState, GipfMove> {
 
 	Board board_1, board_2;
-	std::map<char, int64_t> no_pieces;
+	int64_t pieces_left_1, pieces_left_2;
 	GipfState() : State(PLAYER_1) {
-		no_pieces[PLAYER_1] = 12;
-		no_pieces[PLAYER_2] = 12;
+		pieces_left_1 = 15;
+		pieces_left_2 = 15;
 	}
 
 	GipfState(const string &init_string) : State(PLAYER_1) {
-		no_pieces[PLAYER_1] = 12;
-		no_pieces[PLAYER_2] = 12;
+		pieces_left_1 = 15;
+		pieces_left_2 = 15;
 
 		const unsigned long length = init_string.length();
 		const unsigned long correct_length = 61;
@@ -120,8 +120,10 @@ struct GipfState : public State<GipfState, GipfMove> {
 				const char c = init_string[y * COLLEN[y] + x];
 				if (c == PLAYER_1) {
 					board_1.set(x, y, 1);
+					pieces_left_1--;
 				} else if (c == PLAYER_2) {
 					board_2.set(x, y, 1);
+					pieces_left_2--;
 				}
 			}
 		}
@@ -131,6 +133,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 		GipfState clone = GipfState();
 		clone.board_1 = Board(board_1);
 		clone.board_2 = Board(board_2);
+		clone.pieces_left_1 = pieces_left_1;
+		clone.pieces_left_2 = pieces_left_2;
 		clone.player_to_move = player_to_move;
 		return clone;
 	}
@@ -176,21 +180,27 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	bool is_winner(char player) const override {
-		if (no_pieces.at(get_enemy(player)) <= 0)
+		int64_t enemy_pieces_left =
+		    (player == PLAYER_1) ? pieces_left_2 : pieces_left_1;
+		if (enemy_pieces_left <= 0)
 			return true;
 		return false;
 	}
 
 	void make_move(const GipfMove &move) override {
-		auto &board = player_to_move == PLAYER_1 ? board_1 : board_2;
+		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
+		auto &pieces_left =
+		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 		board.board |= move.elt;
 		board.SlidePieces(move.elt, move.dir);
-		no_pieces[player_to_move]--;
+		pieces_left--;
 		ResolveBoard();
 		player_to_move = get_enemy(player_to_move);
 	}
 
 	void ResolveBoard() {
+		auto &pieces_left =
+		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 		for (auto row : four_in_a_row_cases) {
 			if (((~board_1.board) & row.first) == 0) {
 				int64_t count = 0;
@@ -201,7 +211,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 				}
 				board_1.board &= row.second;
 				board_2.board &= row.second;
-				no_pieces[player_to_move] += no_of_set_bits(count);
+				pieces_left += no_of_set_bits(count);
 				break;
 			}
 		}
@@ -231,8 +241,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 			}
 		}
 		os << " +-------------------------------------+ \n";
-		os << "         Pieces Left: B(" << no_pieces.at(PLAYER_2)
-		   << ") W(" << no_pieces.at(PLAYER_1) << ")\n";
+		os << "         Pieces Left: B(" << pieces_left_2 << ") W("
+		   << pieces_left_1 << ")\n";
 		for (auto row : board_string) {
 			os << row << std::endl;
 		}
@@ -252,6 +262,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 		size_t seed = 0;
 		hash_combine(seed, hash_value(board_1));
 		hash_combine(seed, hash_value(board_2));
+		hash_combine(seed, hash_value(pieces_left_1));
+		hash_combine(seed, hash_value(pieces_left_2));
 		hash_combine(seed, hash_value(player_to_move));
 		return seed;
 	}
