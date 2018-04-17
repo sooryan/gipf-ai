@@ -1,7 +1,7 @@
 #pragma once
 
 #include "direction.h"
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 const std::vector<int> COLLEN = {5, 6, 7, 8, 9, 8, 7, 6, 5};
@@ -11,7 +11,7 @@ const char PLAYER_1 = '1';
 const char PLAYER_2 = '2';
 const char EMPTY = '_';
 
-std::map<int64_t, std::vector<direction>> possible_directions = {
+std::unordered_map<int64_t, std::vector<direction>> possible_directions = {
     {1152921504606846976, {direction::NE}},
     {36028797018963968, {direction::N, direction::NE}},
     {562949953421312, {direction::N, direction::NE}},
@@ -38,13 +38,13 @@ std::map<int64_t, std::vector<direction>> possible_directions = {
     {576460752303423488, {direction::NE, direction::SE}},
 };
 
-std::map<direction, direction> reverse_direction = {
+std::unordered_map<direction, direction> reverse_direction = {
     {direction::N, direction::S},   {direction::NE, direction::SW},
     {direction::SE, direction::NW}, {direction::S, direction::N},
     {direction::SW, direction::NE}, {direction::NW, direction::SE},
 };
 
-std::map<direction, std::map<int64_t, int64_t>> next_element = {
+std::unordered_map<direction, std::map<int64_t, int64_t>> next_element = {
     {direction::N,
      {{18014398509481984, 9007199254740992},
       {9007199254740992, 4503599627370496},
@@ -274,7 +274,7 @@ std::map<direction, std::map<int64_t, int64_t>> next_element = {
       {128, 8192},
       {64, 4096}}}};
 
-std::map<int64_t, int64_t> four_in_a_row_cases = {
+std::unordered_map<int64_t, int64_t> four_in_a_row_cases = {
     {33776997205278720, 33776997205278720},
     {527765581332480, 545357767376896},
     {263882790666240, 545357767376896},
@@ -349,7 +349,7 @@ static std::vector<std::string> board_string = {
     {" | A1  B1  C1  D1  E1  F1  G1  H1  I1  | "},
     {" +-------------------------------------+ "}};
 
-static std::map<direction, std::string> m = {
+static std::unordered_map<direction, std::string> m = {
     {direction::N, "N"}, {direction::NE, "NE"}, {direction::SE, "SE"},
     {direction::S, "S"}, {direction::SW, "SW"}, {direction::NW, "NW"}};
 
