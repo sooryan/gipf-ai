@@ -1,20 +1,13 @@
 #include "gipf.h"
 
 int main() {
-	GipfState state = GipfState("_____"
-	                            "______"
-	                            "_______"
-	                            "________"
-	                            "_________"
-	                            "________"
-	                            "_______"
-	                            "______"
-	                            "_____");
+	GipfState state = GipfState();
 
 	Minimax<GipfState, GipfMove> a(0.1, 30);
-	Minimax<GipfState, GipfMove> b(0.1, 30);
+	Minimax<GipfState, GipfMove> b(0.1);
 
-	Tester<GipfState, GipfMove> tester(&state, a, b);
+	// state, player a, player b, no of games, verbose, generate gif
+	Tester<GipfState, GipfMove> tester(&state, a, b, 1, false, true);
 	tester.start();
 
 	return 0;
