@@ -47,7 +47,7 @@ struct Board {
 	Board(const Board &other) { board = other.board; }
 
 	void set(int x, int y, uint64_t value) {
-	  board = board & (1 << (60 - (COLSUMS[x] + y)));
+		board = board & (1 << (60 - (COLSUMS[x] + y)));
 	}
 
 	bool get(int x, int y) const {
@@ -57,10 +57,10 @@ struct Board {
 
 	bool operator==(const Board &other) const { return board == other.board; }
 
-	bool CanMove(int64_t elt, direction dir) const{
+	bool CanMove(int64_t elt, direction dir) const {
 		int64_t next = next_element[dir][elt];
 		while (InBoard(next)) {
-			if (board & next == 0)
+			if ((board & next) == 0)
 				return true;
 			next = next_element[dir][next];
 		}
@@ -71,8 +71,9 @@ struct Board {
 		int64_t curr = elt;
 		int64_t next = next_element[dir][elt];
 		while (InBoard(next)) {
-			bool next_empty = board & next == 0;
-			board = board ^ next ^ curr;
+			bool next_empty = (board & next) == 0;
+
+			board = (board | next) & (~curr);
 			if (next_empty)
 				break;
 			curr = next;
@@ -80,7 +81,7 @@ struct Board {
 		}
 	}
 
-	bool InBoard(int64_t x) const { return x & 2271516307835194431 == 0; }
+	bool InBoard(int64_t x) const { return (x & 2271516307835194431) == 0; }
 };
 
 size_t hash_value(const Board &board) {
@@ -156,7 +157,6 @@ struct GipfState : public State<GipfState, GipfMove> {
 		}
 		vector<GipfMove> moves;
 		for (auto eltdir : possible_directions) {
-		  std::cout << eltdir.first << "\n";
 			for (auto dir : eltdir.second) {
 				if (board.CanMove(eltdir.first, dir)) {
 					moves.push_back(GipfMove(eltdir.first, dir));
@@ -176,16 +176,14 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	bool is_winner(char player) const override {
-	  if (no_pieces.at(player) <= 0)
+		if (no_pieces.at(get_enemy(player)) <= 0)
 			return true;
 		return false;
 	}
 
 	void make_move(const GipfMove &move) override {
 		auto &board = player_to_move == PLAYER_1 ? board_1 : board_2;
-		if (!board.CanMove(move.elt, move.dir)) {
-			return;
-		}
+		board.board |= move.elt;
 		board.SlidePieces(move.elt, move.dir);
 		no_pieces[player_to_move]--;
 		ResolveBoard();
@@ -194,7 +192,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 
 	void ResolveBoard() {
 		for (auto row : four_in_a_row_cases) {
-		  if (((~board_1.board) & row.first) == 0) {
+			if (((~board_1.board) & row.first) == 0) {
 				int64_t count = 0;
 				if (player_to_move == PLAYER_1) {
 					count = board_1.board & row.second;
@@ -244,7 +242,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 		return os;
 	}
 
-	bool operator==(const GipfState &other) const override{
+	bool operator==(const GipfState &other) const override {
 		return board_1 == other.board_1 && board_2 == other.board_2 &&
 		       player_to_move == other.player_to_move;
 	}
