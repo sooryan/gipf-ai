@@ -1,4 +1,6 @@
 #include <boost/functional/hash.hpp>
+#include <climits>
+#include <cmath>
 #include <string>
 
 #include "gtsa.hpp"
@@ -139,18 +141,36 @@ struct GipfState : public State<GipfState, GipfMove> {
 		return clone;
 	}
 
+	int get_reserve_value(int pieces_left) const {
+		return pieces_left * (280 - std::floor(std::cbrt(pieces_left - 1) * 20));
+	}
+
 	int get_goodness() const override {
-		// TODO: implement evaluation function
 		if (is_terminal()) {
 			if (is_winner(player_to_move)) {
-				return 10000;
+				return INT_MAX;
+			} else if (is_winner(get_enemy(player_to_move))) {
+				return INT_MIN;
+			} else {
+				return 0;
 			}
-			if (is_winner(get_enemy(player_to_move))) {
-				return -10000;
-			}
-			return 10;
 		}
-		return 0;
+
+		int score = get_reserve_value(pieces_left_1) - get_reserve_value(pieces_left_2);
+
+		auto pieces_board_1 = no_of_set_bits(board_1.board);
+		auto pieces_board_2 = no_of_set_bits(board_2.board);
+		score += (pieces_board_1 - pieces_board_2) * 230;
+
+		int pieces_dead_1 = 15 - pieces_left_1 - pieces_board_1;
+		int pieces_dead_2 = 15 - pieces_left_2 - pieces_board_2;
+		score += (pieces_dead_2 - pieces_dead_1) * (pieces_dead_2 + pieces_dead_1) * 10;
+
+		if (player_to_move == PLAYER_2) {
+			score *= -1;
+		}
+
+		return score;
 	}
 
 	vector<GipfMove> get_legal_moves(int max_moves = INF) const override {
