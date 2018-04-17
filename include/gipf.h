@@ -230,12 +230,11 @@ struct GipfState : public State<GipfState, GipfMove> {
 				}
 			}
 		}
-		std::string buffer(22, ' ');
-		os << buffer << " +-------------------------------------+ \n";
-		os << buffer << "         Pieces Left: B(" << no_pieces.at(PLAYER_2)
-		   << ") (" << no_pieces.at(PLAYER_1) << ")\n";
+		os << " +-------------------------------------+ \n";
+		os << "         Pieces Left: B(" << no_pieces.at(PLAYER_2)
+		   << ") W(" << no_pieces.at(PLAYER_1) << ")\n";
 		for (auto row : board_string) {
-			os << buffer << row << std::endl;
+			os << row << std::endl;
 		}
 
 		os << player_to_move << endl;
