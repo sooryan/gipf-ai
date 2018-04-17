@@ -1,9 +1,11 @@
 #pragma once
 
 #include "direction.h"
+#include <map>
+#include <vector>
 
-const vector<int> COLLEN = {5, 6, 7, 8, 9, 8, 7, 6, 5};
-const vector<int> COLSUMS = {0, 5, 11, 18, 26, 35, 43, 50, 56};
+const std::vector<int> COLLEN = {5, 6, 7, 8, 9, 8, 7, 6, 5};
+const std::vector<int> COLSUMS = {0, 5, 11, 18, 26, 35, 43, 50, 56};
 
 const char PLAYER_1 = '1';
 const char PLAYER_2 = '2';
@@ -304,7 +306,6 @@ static std::vector<std::string> board_string = {
     {" |                                     | "},
     {" | A1  B1  C1  D1  E1  F1  G1  H1  I1  | "},
     {" +-------------------------------------+ "}};
-
 
 static std::map<direction, std::string> m = {
     {direction::N, "N"}, {direction::NE, "NE"}, {direction::SE, "SE"},
