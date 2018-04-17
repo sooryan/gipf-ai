@@ -9,6 +9,9 @@ include_directories(${Boost_INCLUDE_DIR})
 
 # set(SOURCES src/mainapp.cpp src/Student.cpp)
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/gtsa/cpp/square.ttf
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(simulator ${SOURCES})
