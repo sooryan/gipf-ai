@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.9.6)
 project(gipf)
 
+include(UseSWIG)
+
 find_package(Boost REQUIRED)
+find_package(SWIG REQUIRED)
+find_package(PythonLibs REQUIRED)
 
 include_directories(include)
 include_directories(gtsa/cpp/)
 include_directories(${Boost_INCLUDE_DIR})
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 # set(SOURCES src/mainapp.cpp src/Student.cpp)
 
@@ -15,3 +20,6 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/gtsa/cpp/square.ttf
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(simulator ${SOURCES})
+
+set_property(SOURCE gipf.i PROPERTY CPLUSPLUS ON SWIG_MODULE_NAME gipf)
+swig_add_library(gipf LANGUAGE python SOURCES gipf.i)

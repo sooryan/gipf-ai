@@ -7,13 +7,16 @@
 #include "gtsa.hpp"
 #include "utils.h"
 
+using llint = long long int;
+using ullint = unsigned long long int;
+
 struct GipfMove : public Move<GipfMove> {
-	int64_t elt;
+	llint elt;
 	direction dir;
 
 	GipfMove() {}
 
-	GipfMove(int64_t elt, direction dir) : elt(elt), dir(dir) {}
+	GipfMove(llint elt, direction dir) : elt(elt), dir(dir) {}
 
 	void read(istream &stream = cin) override {
 		if (&stream == &cin) {
@@ -43,25 +46,25 @@ struct GipfMove : public Move<GipfMove> {
 };
 
 struct Board {
-	uint64_t board = 0;
+	ullint board = 0;
 
 	Board() {}
 
 	Board(const Board &other) { board = other.board; }
 
-	void set(int x, int y, uint64_t value) {
+	void set(int x, int y, ullint value) {
 		board = board & (1 << (60 - (COLSUMS[x] + y)));
 	}
 
 	bool get(int x, int y) const {
-		uint64_t i = 60 - (COLSUMS[x] + y);
+		ullint i = 60 - (COLSUMS[x] + y);
 		return (board >> i) & 1;
 	}
 
 	bool operator==(const Board &other) const { return board == other.board; }
 
-	bool CanMove(int64_t elt, direction dir) const {
-		int64_t next = next_element[dir][elt];
+	bool CanMove(llint elt, direction dir) const {
+		llint next = next_element[dir][elt];
 		while (InBoard(next) && next != 0) {
 			if ((board & next) == 0)
 				return true;
@@ -70,11 +73,11 @@ struct Board {
 		return false;
 	}
 
-	void SlidePieces(int64_t elt, direction dir, Board &combined) {
-		int64_t next = next_element[dir][elt];
-		int64_t mask_board = next;
-		int64_t mask_combined = next;
-		int64_t curr = elt;
+	void SlidePieces(llint elt, direction dir, Board &combined) {
+		llint next = next_element[dir][elt];
+		llint mask_board = next;
+		llint mask_combined = next;
+		llint curr = elt;
 		while (InBoard(next) && (next != 0)) {
 			bool next_empty = (combined.board & next) == 0;
 			if (board & curr) {
@@ -92,18 +95,18 @@ struct Board {
 		combined.board |= mask_combined;
 	}
 
-	bool InBoard(int64_t x) const { return (x & 2271516307835194431) == 0; }
+	bool InBoard(llint x) const { return (x & 2271516307835194431) == 0; }
 };
 
 size_t hash_value(const Board &board) {
-	hash<uint64_t> hash_fn;
+	hash<ullint> hash_fn;
 	return hash_fn(board.board);
 }
 
 struct GipfState : public State<GipfState, GipfMove> {
 
 	Board board_1, board_2, combined;
-	int64_t pieces_left_1, pieces_left_2;
+	llint pieces_left_1, pieces_left_2;
 	GipfState() : State(PLAYER_1) {
 		pieces_left_1 = 15;
 		pieces_left_2 = 15;
@@ -209,7 +212,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	bool is_winner(char player) const override {
-		int64_t enemy_pieces_left =
+		llint enemy_pieces_left =
 		    (player == PLAYER_1) ? pieces_left_2 : pieces_left_1;
 		if (enemy_pieces_left <= 0)
 			return true;
@@ -247,7 +250,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 		for (auto row : four_in_a_row_cases) {
 			if (((~board_1.board) & row.first) == 0) {
-				int64_t count = 0;
+				llint count = 0;
 				if (player_to_move == PLAYER_1) {
 					count = board_1.board & row.second;
 				} else {
@@ -271,8 +274,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 		auto r_dir = reverse_direction[move.dir];
 		auto r_elt = opposite_start_elt[move.dir][move.elt];
 
-		int64_t next = next_element[r_dir][r_elt];
-		int64_t curr = r_elt;
+		llint next = next_element[r_dir][r_elt];
+		llint curr = r_elt;
 		while (board.InBoard(next) && (next != 0)) {
 			if (board.board & curr) {
 				board.board &= (~curr);
