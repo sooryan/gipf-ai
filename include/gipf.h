@@ -1,3 +1,4 @@
+#include <bitset>
 #include <boost/functional/hash.hpp>
 #include <climits>
 #include <cmath>
@@ -61,7 +62,7 @@ struct Board {
 
 	bool CanMove(int64_t elt, direction dir) const {
 		int64_t next = next_element[dir][elt];
-		while (InBoard(next)) {
+		while (InBoard(next) && next != 0) {
 			if ((board & next) == 0)
 				return true;
 			next = next_element[dir][next];
@@ -69,18 +70,30 @@ struct Board {
 		return false;
 	}
 
-	void SlidePieces(int64_t elt, direction dir) {
-		int64_t curr = elt;
+	void SlidePieces(int64_t elt, direction dir, Board &combined) {
 		int64_t next = next_element[dir][elt];
-		while (InBoard(next)) {
-			bool next_empty = (board & next) == 0;
-
-			board = (board | next) & (~curr);
-			if (next_empty)
+		int64_t mask_board = next;
+		int64_t mask_combined = next;
+		int64_t curr = elt;
+		while (InBoard(next) && (next != 0)) {
+			bool next_empty = (combined.board & next) == 0;
+			if (board & curr) {
+				board &= (~curr);
+				mask_board |= next;
+			}
+			mask_combined |= next;
+			if (next_empty) {
 				break;
+			}
 			curr = next;
 			next = next_element[dir][next];
 		}
+		// cout << "ELT:: " << bitset<64>(elt) << endl;
+		// cout << "DIR:: " << m[dir] << endl;
+		// cout << "MSK:: " << bitset<64>(mask_board) << endl;
+		// cout << "MSK:: " << bitset<64>(mask_combined) << endl << endl;
+		board |= mask_board;
+		combined.board |= mask_combined;
 	}
 
 	bool InBoard(int64_t x) const { return (x & 2271516307835194431) == 0; }
@@ -93,7 +106,7 @@ size_t hash_value(const Board &board) {
 
 struct GipfState : public State<GipfState, GipfMove> {
 
-	Board board_1, board_2;
+	Board board_1, board_2, combined;
 	int64_t pieces_left_1, pieces_left_2;
 	GipfState() : State(PLAYER_1) {
 		pieces_left_1 = 15;
@@ -129,12 +142,14 @@ struct GipfState : public State<GipfState, GipfMove> {
 				}
 			}
 		}
+		combined.board = board_1.board | board_2.board;
 	}
 
 	GipfState clone() const override {
 		GipfState clone = GipfState();
 		clone.board_1 = Board(board_1);
 		clone.board_2 = Board(board_2);
+		clone.combined = Board(combined);
 		clone.pieces_left_1 = pieces_left_1;
 		clone.pieces_left_2 = pieces_left_2;
 		clone.player_to_move = player_to_move;
@@ -142,7 +157,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	int get_reserve_value(int pieces_left) const {
-		return pieces_left * (280 - std::floor(std::cbrt(pieces_left - 1) * 20));
+		return pieces_left *
+		       (280 - std::floor(std::cbrt(pieces_left - 1) * 20));
 	}
 
 	int get_goodness() const override {
@@ -156,7 +172,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 			}
 		}
 
-		int score = get_reserve_value(pieces_left_1) - get_reserve_value(pieces_left_2);
+		int score =
+		    get_reserve_value(pieces_left_1) - get_reserve_value(pieces_left_2);
 
 		auto pieces_board_1 = no_of_set_bits(board_1.board);
 		auto pieces_board_2 = no_of_set_bits(board_2.board);
@@ -164,7 +181,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 
 		int pieces_dead_1 = 15 - pieces_left_1 - pieces_board_1;
 		int pieces_dead_2 = 15 - pieces_left_2 - pieces_board_2;
-		score += (pieces_dead_2 - pieces_dead_1) * (pieces_dead_2 + pieces_dead_1) * 10;
+		score += (pieces_dead_2 - pieces_dead_1) *
+		         (pieces_dead_2 + pieces_dead_1) * 10;
 
 		if (player_to_move == PLAYER_2) {
 			score *= -1;
@@ -174,15 +192,10 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	vector<GipfMove> get_legal_moves(int max_moves = INF) const override {
-		auto &board = player_to_move == PLAYER_1 ? board_1 : board_2;
-		int available_moves = 42;
-		if (max_moves > available_moves) {
-			max_moves = available_moves;
-		}
 		vector<GipfMove> moves;
 		for (auto eltdir : possible_directions) {
 			for (auto dir : eltdir.second) {
-				if (board.CanMove(eltdir.first, dir)) {
+				if (combined.CanMove(eltdir.first, dir)) {
 					moves.push_back(GipfMove(eltdir.first, dir));
 				}
 			}
@@ -209,11 +222,31 @@ struct GipfState : public State<GipfState, GipfMove> {
 
 	void make_move(const GipfMove &move) override {
 		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
+		auto &other_board = (player_to_move == PLAYER_1) ? board_2 : board_1;
 		auto &pieces_left =
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
-		board.board |= move.elt;
-		board.SlidePieces(move.elt, move.dir);
+
+		auto pieces_board_1 = no_of_set_bits(board.board);
+		auto pieces_board_2 = no_of_set_bits(other_board.board);
+
+		// cout << "CB :: " << bitset<64>(combined.board) << endl;
+		// cout << "BB :: " << bitset<64>(board.board) << endl;
+		// cout << "OB :: " << bitset<64>(other_board.board) << endl << endl;
+
+		board.SlidePieces(move.elt, move.dir, combined);
+		other_board.board = combined.board & (~board.board);
+
+		// cout << "CA :: " << bitset<64>(combined.board) << endl;
+		// cout << "BA :: " << bitset<64>(board.board) << endl;
+		// cout << "OA :: " << bitset<64>(other_board.board) << endl << endl;
+		// cout << string(64, '-') << endl;
+
+		assert((board_1.board & board_2.board) == 0);
+		assert(pieces_board_1 == (no_of_set_bits(board.board) - 1));
+		assert(pieces_board_2 == (no_of_set_bits(other_board.board)));
+
 		pieces_left--;
+
 		ResolveBoard();
 		player_to_move = get_enemy(player_to_move);
 	}
@@ -229,8 +262,9 @@ struct GipfState : public State<GipfState, GipfMove> {
 				} else {
 					count = board_2.board & row.second;
 				}
-				board_1.board &= row.second;
-				board_2.board &= row.second;
+				board_1.board &= ~row.second;
+				board_2.board &= ~row.second;
+				combined.board = board_1.board | board_2.board;
 				pieces_left += no_of_set_bits(count);
 				break;
 			}
@@ -246,17 +280,14 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	ostream &to_stream(ostream &os) const override {
-
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9 - abs(i - 4); j++) {
 				int i_eff = 19 - abs(i - 4) - (j * 2);
 				int j_eff = i * 4 + 4;
-				if (board_1.board & xytoint(i, j)) {
+				if (board_1.get(i, j)) {
 					board_string[i_eff][j_eff] = 'W';
-				} else if (board_2.board & xytoint(i, j)) {
+				} else if (board_2.get(i, j)) {
 					board_string[i_eff][j_eff] = 'B';
-				} else {
-					board_string[i_eff][j_eff] = '*';
 				}
 			}
 		}
