@@ -17,7 +17,7 @@ struct GipfMove : public Move<GipfMove> {
 
 	void read(istream &stream = cin) override {
 		if (&stream == &cin) {
-			// cout << "Enter row, column and direction of your move (A1 NE): ";
+			cout << "Enter row, column and direction of your move (A1 NE): ";
 		}
 		int row, column;
 		stream >> row >> column >> dir;
@@ -88,10 +88,6 @@ struct Board {
 			curr = next;
 			next = next_element[dir][next];
 		}
-		// cout << "ELT:: " << bitset<64>(elt) << endl;
-		// cout << "DIR:: " << m[dir] << endl;
-		// cout << "MSK:: " << bitset<64>(mask_board) << endl;
-		// cout << "MSK:: " << bitset<64>(mask_combined) << endl << endl;
 		board |= mask_board;
 		combined.board |= mask_combined;
 	}
@@ -233,17 +229,8 @@ struct GipfState : public State<GipfState, GipfMove> {
 		auto pieces_board_1 = no_of_set_bits(board.board);
 		auto pieces_board_2 = no_of_set_bits(other_board.board);
 
-		// cout << "CB :: " << bitset<64>(combined.board) << endl;
-		// cout << "BB :: " << bitset<64>(board.board) << endl;
-		// cout << "OB :: " << bitset<64>(other_board.board) << endl << endl;
-
 		board.SlidePieces(move.elt, move.dir, combined);
 		other_board.board = combined.board & (~board.board);
-
-		// cout << "CA :: " << bitset<64>(combined.board) << endl;
-		// cout << "BA :: " << bitset<64>(board.board) << endl;
-		// cout << "OA :: " << bitset<64>(other_board.board) << endl << endl;
-		// cout << string(64, '-') << endl;
 
 		assert((board_1.board & board_2.board) == 0);
 		assert(pieces_board_1 == (no_of_set_bits(board.board) - 1));
@@ -276,17 +263,13 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void undo_move(const GipfMove &move) override {
-		// cerr << "LOLOL" << endl;
 		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
 		auto &other_board = (player_to_move == PLAYER_1) ? board_2 : board_1;
 		auto &pieces_left =
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 
 		auto r_dir = reverse_direction[move.dir];
-		// cerr << m[move.dir] << ' ' << m[r_dir] << endl;
 		auto r_elt = opposite_start_elt[move.dir][move.elt];
-		// cerr << bitset<64>(move.elt) << '\n' << bitset<64>(r_elt) << endl;
-		// cerr << bitset<64>(next_element[r_dir][r_elt]) << endl;
 
 		int64_t next = next_element[r_dir][r_elt];
 		int64_t curr = r_elt;
