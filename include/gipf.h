@@ -17,7 +17,7 @@ struct GipfMove : public Move<GipfMove> {
 
 	void read(istream &stream = cin) override {
 		if (&stream == &cin) {
-			cout << "Enter row, column and direction of your move (A1 NE): ";
+			// cout << "Enter row, column and direction of your move (A1 NE): ";
 		}
 		int row, column;
 		stream >> row >> column >> dir;
@@ -226,6 +226,10 @@ struct GipfState : public State<GipfState, GipfMove> {
 		auto &pieces_left =
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 
+		if (!combined.CanMove(move.elt, move.dir)) {
+			return;
+		}
+
 		auto pieces_board_1 = no_of_set_bits(board.board);
 		auto pieces_board_2 = no_of_set_bits(other_board.board);
 
@@ -272,7 +276,34 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void undo_move(const GipfMove &move) override {
-		make_move(GipfMove(move.elt, reverse_direction[move.dir]));
+		// cerr << "LOLOL" << endl;
+		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
+		auto &other_board = (player_to_move == PLAYER_1) ? board_2 : board_1;
+		auto &pieces_left =
+		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
+
+		auto r_dir = reverse_direction[move.dir];
+		// cerr << m[move.dir] << ' ' << m[r_dir] << endl;
+		auto r_elt = opposite_start_elt[move.dir][move.elt];
+		// cerr << bitset<64>(move.elt) << '\n' << bitset<64>(r_elt) << endl;
+		// cerr << bitset<64>(next_element[r_dir][r_elt]) << endl;
+
+		int64_t next = next_element[r_dir][r_elt];
+		int64_t curr = r_elt;
+		while (board.InBoard(next) && (next != 0)) {
+			if (board.board & curr) {
+				board.board &= (~curr);
+				board.board |= next;
+			} else if (other_board.board & curr) {
+				other_board.board &= (~curr);
+				other_board.board |= next;
+			}
+			curr = next;
+			next = next_element[r_dir][next];
+		}
+		board.board &= ~(next_element[move.dir][move.elt]);
+		combined.board = board.board | other_board.board;
+		pieces_left++;
 	}
 
 	bool is_empty(int x, int y) const {
