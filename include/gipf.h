@@ -245,23 +245,39 @@ struct GipfState : public State<GipfState, GipfMove> {
 		player_to_move = get_enemy(player_to_move);
 	}
 
-	void ResolveBoard() {
+	void ResolveRow(llint row) {
 		auto &pieces_left =
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
-		for (auto row : four_in_a_row_cases) {
-			if (((~board_1.board) & row.first) == 0) {
-				llint count = 0;
-				if (player_to_move == PLAYER_1) {
-					count = board_1.board & row.second;
-				} else {
-					count = board_2.board & row.second;
+		llint count = 0;
+		if (player_to_move == PLAYER_1) {
+			count = board_1.board & row;
+		} else {
+			count = board_2.board & row;
+		}
+		board_1.board &= ~row;
+		board_2.board &= ~row;
+		combined.board = board_1.board | board_2.board;
+		pieces_left += no_of_set_bits(count);
+	}
+
+	void ResolveBoard() {
+		vector<std::reference_wrapper<Board>> boards = {std::ref(board_1),
+		                                                std::ref(board_2)};
+		vector<llint> available_four_in_a_rows;
+
+		for (auto board : boards) {
+			for (auto row : four_in_a_row_cases) {
+				if (((~board.get().board) & row.first) == 0) {
+					available_four_in_a_rows.push_back(row.second);
 				}
-				board_1.board &= ~row.second;
-				board_2.board &= ~row.second;
-				combined.board = board_1.board | board_2.board;
-				pieces_left += no_of_set_bits(count);
-				break;
 			}
+		}
+
+		// resolves only the first available one. When generating moves, all
+		// elts in the vector need to be considered
+		for (auto row : available_four_in_a_rows) {
+			ResolveRow(row);
+			break;
 		}
 	}
 
