@@ -183,6 +183,13 @@ struct GipfState : public State<GipfState, GipfMove> {
 		score += (pieces_dead_2 - pieces_dead_1) *
 		         (pieces_dead_2 + pieces_dead_1) * 10;
 
+		llint x = 1LL<<60;
+		while (x > 0) {
+			score += position_scores[board_1.board & x];
+			score -= position_scores[board_2.board & x];
+			x >>= 1;
+		}
+
 		if (player_to_move == PLAYER_2) {
 			score *= -1;
 		}
