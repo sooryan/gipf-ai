@@ -365,6 +365,8 @@ int64_t no_of_set_bits(int64_t x) {
 	return count;
 }
 
+bool in_board(int64_t x) { return (x & 2271516307835194431) == 0; }
+
 std::unordered_map<direction, std::unordered_map<int64_t, int64_t>> opposite_start_elt = {
     {direction::N, {{17179869184, 67108864}}},
     {direction::NE,

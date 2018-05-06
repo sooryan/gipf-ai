@@ -13,10 +13,11 @@ using ullint = unsigned long long int;
 struct GipfMove : public Move<GipfMove> {
 	llint elt;
 	direction dir;
+	vector<llint> captures;
 
 	GipfMove() {}
 
-	GipfMove(llint elt, direction dir) : elt(elt), dir(dir) {}
+	GipfMove(llint elt, direction dir, vector<llint> captures) : elt(elt), dir(dir), captures(captures) {}
 
 	void read(istream &stream = cin) override {
 		if (&stream == &cin) {
@@ -32,7 +33,7 @@ struct GipfMove : public Move<GipfMove> {
 	}
 
 	bool operator==(const GipfMove &rhs) const override {
-		return elt == rhs.elt && dir == rhs.dir;
+		return elt == rhs.elt && dir == rhs.dir && captures == rhs.captures;
 	}
 
 	size_t hash() const override {
@@ -41,6 +42,9 @@ struct GipfMove : public Move<GipfMove> {
 		size_t seed = 0;
 		hash_combine(seed, hash_value(elt));
 		hash_combine(seed, hash_value(dir));
+		for (auto capture : captures) {
+			hash_combine(seed, hash_value(capture));
+		}
 		return seed;
 	}
 };
@@ -65,7 +69,7 @@ struct Board {
 
 	bool CanMove(llint elt, direction dir) const {
 		llint next = next_element[dir][elt];
-		while (InBoard(next) && next != 0) {
+		while (in_board(next) && next != 0) {
 			if ((board & next) == 0)
 				return true;
 			next = next_element[dir][next];
@@ -78,7 +82,7 @@ struct Board {
 		llint mask_board = next;
 		llint mask_combined = next;
 		llint curr = elt;
-		while (InBoard(next) && (next != 0)) {
+		while (in_board(next) && (next != 0)) {
 			bool next_empty = (combined.board & next) == 0;
 			if (board & curr) {
 				board &= (~curr);
@@ -94,8 +98,6 @@ struct Board {
 		board |= mask_board;
 		combined.board |= mask_combined;
 	}
-
-	bool InBoard(llint x) const { return (x & 2271516307835194431) == 0; }
 };
 
 size_t hash_value(const Board &board) {
@@ -107,6 +109,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 
 	Board board_1, board_2, combined;
 	llint pieces_left_1, pieces_left_2;
+	static std::vector<GipfState> history;
 	GipfState() : State(PLAYER_1) {
 		pieces_left_1 = 15;
 		pieces_left_2 = 15;
@@ -201,8 +204,20 @@ struct GipfState : public State<GipfState, GipfMove> {
 		vector<GipfMove> moves;
 		for (auto eltdir : possible_directions) {
 			for (auto dir : eltdir.second) {
-				if (combined.CanMove(eltdir.first, dir)) {
-					moves.push_back(GipfMove(eltdir.first, dir));
+				if (!combined.CanMove(eltdir.first, dir))
+					continue;
+
+				auto dirty_state = *this;
+				dirty_state.SlidePieces(eltdir.first, dir);
+				auto capture_mask_sets = dirty_state.GetCaptureMaskSets();
+
+				if (capture_mask_sets.empty()) {
+					moves.emplace_back(eltdir.first, dir, vector<llint>(0));
+				}
+				else {
+					for (const auto& mask_set : capture_mask_sets) {
+						moves.emplace_back(eltdir.first, dir, mask_set);
+					}
 				}
 			}
 		}
@@ -226,20 +241,18 @@ struct GipfState : public State<GipfState, GipfMove> {
 		return false;
 	}
 
-	void make_move(const GipfMove &move) override {
+	void SlidePieces(llint elt, direction dir) {
+		assert(combined.CanMove(elt, dir));
+
 		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
 		auto &other_board = (player_to_move == PLAYER_1) ? board_2 : board_1;
 		auto &pieces_left =
 		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
 
-		if (!combined.CanMove(move.elt, move.dir)) {
-			return;
-		}
-
 		auto pieces_board_1 = no_of_set_bits(board.board);
 		auto pieces_board_2 = no_of_set_bits(other_board.board);
 
-		board.SlidePieces(move.elt, move.dir, combined);
+		board.SlidePieces(elt, dir, combined);
 		other_board.board = combined.board & (~board.board);
 
 		assert((board_1.board & board_2.board) == 0);
@@ -247,8 +260,16 @@ struct GipfState : public State<GipfState, GipfMove> {
 		assert(pieces_board_2 == (no_of_set_bits(other_board.board)));
 
 		pieces_left--;
+	}
 
-		ResolveBoard();
+	void make_move(const GipfMove &move) override {
+		history.push_back(*this);
+		SlidePieces(move.elt, move.dir);
+
+		for (auto capture : move.captures) {
+			ResolveRow(capture);
+		}
+
 		player_to_move = get_enemy(player_to_move);
 	}
 
@@ -265,11 +286,12 @@ struct GipfState : public State<GipfState, GipfMove> {
 		combined.board = board_1.board | board_2.board;
 	}
 
-	void ResolveBoard() {
+	vector<vector<llint>> GetCaptureMaskSets() {
 		auto &board1 = (player_to_move == PLAYER_1) ? board_1 : board_2;
 		auto &board2 = (player_to_move == PLAYER_1) ? board_2 : board_1;
 		vector<std::reference_wrapper<Board>> boards = {board1, board2};
 		vector<llint> available_four_in_a_rows;
+		vector<vector<llint>> capture_mask_sets;
 
 		for (auto board : boards) {
 			for (auto row : four_in_a_row_cases) {
@@ -291,37 +313,36 @@ struct GipfState : public State<GipfState, GipfMove> {
 		}
 
 		for (auto row : available_four_in_a_rows) {
-			// TODO: check for intersections and stuff
-			ResolveRow(row);
-			break;
+			bool found_set = false;
+
+			for (auto& mask_set : capture_mask_sets) {
+				bool does_intersect = false;
+
+				for (auto mask : mask_set) {
+					if ((row & mask) != 0) {
+						does_intersect = true;
+						break;
+					}
+				}
+
+				if (!does_intersect) {
+					mask_set.push_back(row);
+					found_set = true;
+				}
+			}
+
+			if (!found_set) {
+				capture_mask_sets.push_back(vector<llint>(1, row));
+			}
 		}
+
+		return capture_mask_sets;
 	}
 
 	void undo_move(const GipfMove &move) override {
-		auto &board = (player_to_move == PLAYER_1) ? board_1 : board_2;
-		auto &other_board = (player_to_move == PLAYER_1) ? board_2 : board_1;
-		auto &pieces_left =
-		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
-
-		auto r_dir = reverse_direction[move.dir];
-		auto r_elt = opposite_start_elt[move.dir][move.elt];
-
-		llint next = next_element[r_dir][r_elt];
-		llint curr = r_elt;
-		while (board.InBoard(next) && (next != 0)) {
-			if (board.board & curr) {
-				board.board &= (~curr);
-				board.board |= next;
-			} else if (other_board.board & curr) {
-				other_board.board &= (~curr);
-				other_board.board |= next;
-			}
-			curr = next;
-			next = next_element[r_dir][next];
-		}
-		board.board &= ~(next_element[move.dir][move.elt]);
-		combined.board = board.board | other_board.board;
-		pieces_left++;
+		*this = history.back();
+		history.pop_back();
+		return;
 	}
 
 	bool is_empty(int x, int y) const {
@@ -356,7 +377,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 		       player_to_move == other.player_to_move;
 	}
 
-	size_t hash() const {
+	size_t hash() const override {
 		using boost::hash_combine;
 		using boost::hash_value;
 		size_t seed = 0;
@@ -368,3 +389,5 @@ struct GipfState : public State<GipfState, GipfMove> {
 		return seed;
 	}
 };
+
+std::vector<GipfState> GipfState::history = std::vector<GipfState>(0);
