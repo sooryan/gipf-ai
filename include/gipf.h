@@ -109,13 +109,14 @@ struct GipfState : public State<GipfState, GipfMove> {
 
 	Board board_1, board_2, combined;
 	llint pieces_left_1, pieces_left_2;
-	static std::vector<GipfState> history;
-	GipfState() : State(PLAYER_1) {
+	std::vector<GipfState> history;
+
+	GipfState() : history(0), State(PLAYER_1) {
 		pieces_left_1 = 15;
 		pieces_left_2 = 15;
 	}
 
-	GipfState(const string &init_string) : State(PLAYER_1) {
+	GipfState(const string &init_string) : history(0), State(PLAYER_1) {
 		pieces_left_1 = 15;
 		pieces_left_2 = 15;
 
@@ -148,7 +149,20 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	GipfState clone() const override {
-		return *this;
+		auto clone = history_clone();
+		clone.history = history;
+		return clone;
+	}
+
+	GipfState history_clone() const {
+		auto clone = GipfState();
+		clone.board_1 = board_1;
+		clone.board_2 = board_2;
+		clone.combined = combined;
+		clone.pieces_left_1 = pieces_left_1;
+		clone.pieces_left_2 = pieces_left_2;
+		clone.player_to_move = player_to_move;
+		return clone;
 	}
 
 	int get_reserve_value(int pieces_left) const {
@@ -256,7 +270,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void make_move(const GipfMove &move) override {
-		history.push_back(*this);
+		history.push_back(history_clone());
 		SlidePieces(move.elt, move.dir);
 
 		for (auto capture : move.captures) {
@@ -333,8 +347,14 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void undo_move(const GipfMove &move) override {
-		*this = history.back();
+		auto prev_state = history.back();
 		history.pop_back();
+		board_1 = prev_state.board_1;
+		board_2 = prev_state.board_2;
+		combined = prev_state.combined;
+		pieces_left_1 = prev_state.pieces_left_1;
+		pieces_left_2 = prev_state.pieces_left_2;
+		player_to_move = prev_state.player_to_move;
 		return;
 	}
 
@@ -382,5 +402,3 @@ struct GipfState : public State<GipfState, GipfMove> {
 		return seed;
 	}
 };
-
-std::vector<GipfState> GipfState::history = std::vector<GipfState>(0);
