@@ -363,21 +363,22 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	ostream &to_stream(ostream &os) const override {
+		auto board_string_copy = board_string;
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9 - abs(i - 4); j++) {
 				int i_eff = 19 - abs(i - 4) - (j * 2);
 				int j_eff = i * 4 + 4;
 				if (board_1.get(i, j)) {
-					board_string[i_eff][j_eff] = 'W';
+					board_string_copy[i_eff][j_eff] = 'W';
 				} else if (board_2.get(i, j)) {
-					board_string[i_eff][j_eff] = 'B';
+					board_string_copy[i_eff][j_eff] = 'B';
 				}
 			}
 		}
 		os << " +-------------------------------------+ \n";
 		os << "         Pieces Left: B(" << pieces_left_2 << ") W("
 		   << pieces_left_1 << ")\n";
-		for (auto row : board_string) {
+		for (auto row : board_string_copy) {
 			os << row << std::endl;
 		}
 
