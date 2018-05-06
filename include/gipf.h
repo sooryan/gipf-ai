@@ -253,18 +253,16 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void ResolveRow(llint row) {
-		auto &pieces_left =
-		    (player_to_move == PLAYER_1) ? pieces_left_1 : pieces_left_2;
-		llint count = 0;
-		if (player_to_move == PLAYER_1) {
-			count = board_1.board & row;
+		llint count1 = no_of_set_bits(board_1.board & row);
+		llint count2 = no_of_set_bits(board_2.board & row);
+		if (count2 >= 4) {
+		  pieces_left_2 += count2;
 		} else {
-			count = board_2.board & row;
+		  pieces_left_1 += count1;
 		}
 		board_1.board &= ~row;
 		board_2.board &= ~row;
 		combined.board = board_1.board | board_2.board;
-		pieces_left += no_of_set_bits(count);
 	}
 
 	void ResolveBoard() {
