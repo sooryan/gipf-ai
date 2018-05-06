@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.9.6)
 project(gipf)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -fbuiltin -O0")
+set(CMAKE_CXX_STANDARD 14)
+
 include(UseSWIG)
 
 find_package(Boost REQUIRED)
