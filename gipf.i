@@ -1,19 +1,24 @@
  %include "typemaps.i"
  %include "std_vector.i"
  %include "std_string.i"
- %module(directors="1") gipf
+
+ %template(FloatVector) std::vector<float>;
+
+ %module gipf
  %{
  /* Includes the header in the wrapper code */
  #include "gtsa.hpp"
  #include "gipf.h"
  %}
  
- %template(FloatVector) std::vector<float>;
  /* Parse the header file to generate wrappers */
  %include "gtsa.hpp"
- %include "gipf.h"
 
-%template(VectorGipfMove) std::vector<GipfMove>;
+ %template(VectorGipfMove) std::vector<GipfMove>;
+ %template(BaseGipfMove) Move<GipfMove>;
+ %template(BaseGipfState) State<GipfState, GipfMove>;
+
+ %include "gipf.h"
 
 %extend GipfState {
 	std::string __str__() {
