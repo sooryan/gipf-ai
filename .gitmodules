@@ -1,4 +1,4 @@
 [submodule "gtsa"]
 	path = gtsa
-	url = https://github.com/AdamStelmaszczyk/gtsa
+	url = https://github.com/JHurricane96/gtsa
 	branch = master
