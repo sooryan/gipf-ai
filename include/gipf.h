@@ -148,14 +148,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	GipfState clone() const override {
-		GipfState clone = GipfState();
-		clone.board_1 = Board(board_1);
-		clone.board_2 = Board(board_2);
-		clone.combined = Board(combined);
-		clone.pieces_left_1 = pieces_left_1;
-		clone.pieces_left_2 = pieces_left_2;
-		clone.player_to_move = player_to_move;
-		return clone;
+		return *this;
 	}
 
 	int get_reserve_value(int pieces_left) const {
