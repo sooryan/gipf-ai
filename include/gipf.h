@@ -268,21 +268,32 @@ struct GipfState : public State<GipfState, GipfMove> {
 	}
 
 	void ResolveBoard() {
-		vector<std::reference_wrapper<Board>> boards = {std::ref(board_1),
-		                                                std::ref(board_2)};
+		auto &board1 = (player_to_move == PLAYER_1) ? board_1 : board_2;
+		auto &board2 = (player_to_move == PLAYER_1) ? board_2 : board_1;
+		vector<std::reference_wrapper<Board>> boards = {board1, board2};
 		vector<llint> available_four_in_a_rows;
 
 		for (auto board : boards) {
 			for (auto row : four_in_a_row_cases) {
 				if (((~board.get().board) & row.first) == 0) {
-					available_four_in_a_rows.push_back(row.second);
+					llint capture_mask = 0;
+					auto direlt = row.second;
+					auto next = next_element[direlt.first][direlt.second];
+					bool matched = false;
+					while (combined.board & next or (!matched)) {
+						if (combined.board & next) {
+							capture_mask |= next;
+							matched = true;
+						}
+						next = next_element[direlt.first][next];
+					}
+					available_four_in_a_rows.push_back(capture_mask);
 				}
 			}
 		}
 
-		// resolves only the first available one. When generating moves, all
-		// elts in the vector need to be considered
 		for (auto row : available_four_in_a_rows) {
+			// TODO: check for intersections and stuff
 			ResolveRow(row);
 			break;
 		}
