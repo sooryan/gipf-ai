@@ -24,6 +24,7 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/gtsa/cpp/square.ttf
 file(GLOB SOURCES "src/*.cpp")
 
 add_executable(simulator ${SOURCES})
+target_link_libraries(simulator pthread)
 
 set_property(SOURCE gipf.i PROPERTY CPLUSPLUS ON SWIG_MODULE_NAME gipf)
 swig_add_library(gipf LANGUAGE python SOURCES gipf.i)
