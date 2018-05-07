@@ -234,7 +234,7 @@ struct GipfState : public State<GipfState, GipfMove> {
 				if (!combined.CanMove(eltdir.first, dir))
 					continue;
 
-				auto dirty_state = *this;
+				auto dirty_state = clone();
 				dirty_state.SlidePieces(eltdir.first, dir);
 				auto capture_mask_sets = dirty_state.GetCaptureMaskSets();
 
