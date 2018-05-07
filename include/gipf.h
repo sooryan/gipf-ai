@@ -68,17 +68,32 @@ struct Board {
 	bool operator==(const Board &other) const { return board == other.board; }
 
 	bool CanMove(llint elt, direction dir) const {
-		llint next = next_element[dir][elt];
+		llint next;
+		if (next_element.at(dir).find(elt) != next_element.at(dir).end())
+			next = next_element.at(dir).at(elt);
+		else
+			next = 0;
+
 		while (in_board(next) && next != 0) {
 			if ((board & next) == 0)
 				return true;
-			next = next_element[dir][next];
+			next = next_element.at(dir)[next];
+			if (next_element.at(dir).find(next) != next_element.at(dir).end()) {
+				next = next_element.at(dir).at(next);
+			}
+			else {
+				next = 0;
+			}
 		}
 		return false;
 	}
 
 	void SlidePieces(llint elt, direction dir, Board &combined) {
-		llint next = next_element[dir][elt];
+		llint next;
+		if (next_element.at(dir).find(elt) != next_element.at(dir).end())
+			next = next_element.at(dir).at(elt);
+		else
+			next = 0;
 		llint mask_board = next;
 		llint mask_combined = next;
 		llint curr = elt;
@@ -93,7 +108,12 @@ struct Board {
 				break;
 			}
 			curr = next;
-			next = next_element[dir][next];
+			if (next_element.at(dir).find(next) != next_element.at(dir).end()) {
+				next = next_element.at(dir).at(next);
+			}
+			else {
+				next = 0;
+			}
 		}
 		board |= mask_board;
 		combined.board |= mask_combined;
@@ -305,14 +325,25 @@ struct GipfState : public State<GipfState, GipfMove> {
 				if (((~board.get().board) & row.first) == 0) {
 					llint capture_mask = 0;
 					auto direlt = row.second;
-					auto next = next_element[direlt.first][direlt.second];
+					llint next;
+					if (next_element.at(direlt.first).find(direlt.second) != next_element.at(direlt.first).end()) {
+						next = next_element.at(direlt.first).at(direlt.second);
+					}
+					else {
+						next = 0;
+					}
 					bool matched = false;
 					while (combined.board & next or (!matched)) {
 						if (combined.board & next) {
 							capture_mask |= next;
 							matched = true;
 						}
-						next = next_element[direlt.first][next];
+						if (next_element.at(direlt.first).find(next) != next_element.at(direlt.first).end()) {
+							next = next_element.at(direlt.first).at(next);
+						}
+						else {
+							next = 0;
+						}
 					}
 					available_four_in_a_rows.push_back(capture_mask);
 				}
